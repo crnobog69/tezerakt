@@ -1,0 +1,115 @@
+<html><head><base href="" />
+<title>4D Tesseract Representation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  body { margin: 0; overflow: hidden; background-color: #000; }
+  #info {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="info">4Д Тезеракт<br>Кликни и држи за окретање. Средњи клик (скрол) за увеличавање.</div>
+<script>
+  let scene, camera, renderer, tesseract;
+
+  function init() {
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.PointLight(0xFFFFFF, 1, 100);
+    light.position.set(0, 0, 10);
+    scene.add(light);
+
+    createTesseract();
+
+    window.addEventListener('resize', onWindowResize, false);
+    document.addEventListener('mousemove', onMouseMove, false);
+    document.addEventListener('wheel', onMouseWheel, false);
+
+    animate();
+  }
+
+  function createTesseract() {
+    tesseract = new THREE.Group();
+
+    const vertices = [
+      [-1, -1, -1, 1], [1, -1, -1, 1], [1, 1, -1, 1], [-1, 1, -1, 1],
+      [-1, -1, 1, 1], [1, -1, 1, 1], [1, 1, 1, 1], [-1, 1, 1, 1],
+      [-1, -1, -1, -1], [1, -1, -1, -1], [1, 1, -1, -1], [-1, 1, -1, -1],
+      [-1, -1, 1, -1], [1, -1, 1, -1], [1, 1, 1, -1], [-1, 1, 1, -1]
+    ];
+
+    const edges = [
+      [0, 1], [1, 2], [2, 3], [3, 0],
+      [4, 5], [5, 6], [6, 7], [7, 4],
+      [0, 4], [1, 5], [2, 6], [3, 7],
+      [8, 9], [9, 10], [10, 11], [11, 8],
+      [12, 13], [13, 14], [14, 15], [15, 12],
+      [8, 12], [9, 13], [10, 14], [11, 15],
+      [0, 8], [1, 9], [2, 10], [3, 11],
+      [4, 12], [5, 13], [6, 14], [7, 15]
+    ];
+
+    const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+
+    edges.forEach(edge => {
+      const geometry = new THREE.BufferGeometry();
+      const start = new THREE.Vector3(vertices[edge[0]][0], vertices[edge[0]][1], vertices[edge[0]][2]);
+      const end = new THREE.Vector3(vertices[edge[1]][0], vertices[edge[1]][1], vertices[edge[1]][2]);
+      geometry.setFromPoints([start, end]);
+      const line = new THREE.Line(geometry, material);
+      tesseract.add(line);
+    });
+
+    scene.add(tesseract);
+  }
+
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function onMouseMove(event) {
+    const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+    const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+    tesseract.rotation.y = mouseX * Math.PI;
+    tesseract.rotation.x = mouseY * Math.PI / 2;
+  }
+
+  function onMouseWheel(event) {
+    camera.position.z += event.deltaY * 0.01;
+    camera.position.z = Math.max(2, Math.min(camera.position.z, 10));
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+   
+    tesseract.rotation.w = (tesseract.rotation.w || 0) + 0.01;
+    tesseract.children.forEach((line, index) => {
+      const t = Date.now() * 0.001 + index * 0.1;
+      const scale = Math.sin(t) * 0.1 + 0.9;
+      line.scale.set(scale, scale, scale);
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  init();
+</script>
+</body></html>
